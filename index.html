@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CatatUang - Goal 1 Miliar</title>
     <style>
-        /* Variabel Warna untuk Light & Dark Mode */
         :root {
             --bg-color: #f4f4f4;
             --card-bg: white;
@@ -30,12 +29,16 @@
 
         .container { max-width: 400px; margin: auto; }
 
+        /* Perbaikan: Gunakan variabel agar warna card berubah sesuai mode */
         .card { 
             background: var(--card-bg); 
             padding: 15px; 
             border-radius: 12px; 
             margin-bottom: 10px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         h2 { text-align: center; margin-bottom: 15px; }
@@ -50,7 +53,7 @@
             font-size: 16px; 
         }
 
-        .btn-group { display: flex; gap: 10px; }
+        .btn-group { display: flex; gap: 10px; width: 100%; }
 
         button { 
             flex: 1; padding: 12px; border: none; 
@@ -61,27 +64,30 @@
         .btn-masuk { background: #2ecc71; }
         .btn-keluar { background: #e74c3c; }
 
-        .progress-container { background: #2c3e50 !important; color: white; }
-
-        #dark-mode-toggle {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: #34495e;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            font-size: 20px;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Khusus Progress Card agar teks tidak terpisah */
+        .progress-container { 
+            background: #2c3e50 !important; 
+            color: white; 
+            display: block; /* Agar konten bar tidak kesamping */
         }
 
-        .transaksi-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* Khusus Form Card agar input tidak kesamping */
+        .form-card { display: block; }
+
+        #dark-mode-toggle {
+            position: fixed; top: 15px; right: 15px;
+            background: #34495e; width: 45px; height: 45px;
+            border-radius: 50%; font-size: 20px; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            color: white; border: none;
+        }
+
+        .btn-hapus {
+            background: #ff4757; color: white;
+            border: none; border-radius: 8px;
+            padding: 8px 12px; cursor: pointer;
+            font-size: 12px; font-weight: bold;
+            margin-left: 10px;
         }
     </style>
 </head>
@@ -103,7 +109,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card form-card">
             <h3>Tambah Transaksi</h3>
             <input type="text" id="nama-transaksi" placeholder="Nama (misal: Gaji)">
             <input type="number" id="jumlah-transaksi" placeholder="Jumlah (misal: 10000)">
@@ -117,23 +123,19 @@
     </div>
 
     <script>
-        // 1. Inisialisasi Data
         let daftarTransaksi = JSON.parse(localStorage.getItem('dataUang')) || [];
 
-        // 2. Fungsi Toggle Dark Mode
         function toggleDarkMode() {
             const isDark = document.body.classList.toggle('dark-mode');
             document.getElementById('dark-mode-toggle').innerText = isDark ? '☀️' : '🌙';
             localStorage.setItem('darkMode', isDark);
         }
 
-        // Cek Dark Mode saat load
         if (localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
             document.getElementById('dark-mode-toggle').innerText = '☀️';
         }
 
-        // 3. Fungsi Render (Tampilan)
         function renderTampilan() {
             const listContainer = document.getElementById('list-container');
             const totalSaldoElement = document.getElementById('total-saldo');
@@ -145,29 +147,30 @@
             let total = 0;
             const targetMiliar = 1000000000;
 
-            daftarTransaksi.forEach((item) => {
+            // Kita render dari data terbaru ke terlama
+            daftarTransaksi.slice().reverse().forEach((item, index) => {
+                // Karena kita balik urutannya (reverse), kita butuh index asli untuk hapus
+                const realIndex = daftarTransaksi.length - 1 - index;
+
                 if (item.tipe === 'masuk') total += item.jumlah;
                 else total -= item.jumlah;
 
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <div class="transaksi-item">
-                        <div>
-                            <strong>${item.nama}</strong><br>
-                            <small style="color: ${item.tipe === 'masuk' ? '#2ecc71' : '#e74c3c'}">
-                                ${item.tipe === 'masuk' ? '+' : '-'} Rp ${item.jumlah.toLocaleString()}
-                            </small>
-                        </div>
-                        <button onclick="hapusData(${item.id})" style="background:none; color:#e74c3c; width:auto; padding:0;">Hapus</button>
+                    <div style="flex: 1;">
+                        <strong>${item.nama}</strong><br>
+                        <small style="color: ${item.tipe === 'masuk' ? '#2ecc71' : '#e74c3c'}">
+                            ${item.tipe === 'masuk' ? '+' : '-'} Rp ${item.jumlah.toLocaleString()}
+                        </small>
                     </div>
+                    <button onclick="hapusData(${realIndex})" class="btn-hapus">Hapus</button>
                 `;
-                listContainer.prepend(card);
+                listContainer.appendChild(card);
             });
 
             totalSaldoElement.innerText = `Rp ${total.toLocaleString()}`;
             
-            // Hitung Progres
             let persen = (total / targetMiliar) * 100;
             if (persen < 0) persen = 0;
             if (persen > 100) persen = 100;
@@ -182,7 +185,6 @@
             localStorage.setItem('dataUang', JSON.stringify(daftarTransaksi));
         }
 
-        // 4. Fungsi Tambah Data
         function tambahData(tipe) {
             const namaInput = document.getElementById('nama-transaksi');
             const jumlahInput = document.getElementById('jumlah-transaksi');
@@ -190,7 +192,6 @@
             if (namaInput.value === '' || jumlahInput.value === '') return alert("Isi data dulu!");
 
             const transaksiBaru = {
-                id: Date.now(),
                 nama: namaInput.value,
                 jumlah: parseInt(jumlahInput.value),
                 tipe: tipe
@@ -202,13 +203,13 @@
             renderTampilan();
         }
 
-        // 5. Fungsi Hapus Data
-        function hapusData(id) {
-            daftarTransaksi = daftarTransaksi.filter(item => item.id !== id);
-            renderTampilan();
+        function hapusData(index) {
+            if (confirm("Hapus catatan ini?")) {
+                daftarTransaksi.splice(index, 1);
+                renderTampilan();
+            }
         }
 
-        // Jalankan render pertama kali
         renderTampilan();
     </script>
 </body>
