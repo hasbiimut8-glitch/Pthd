@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatatUang - Goal 1 Miliar</title>
+    <style>
+        /* Variabel Warna untuk Light & Dark Mode */
+        :root {
+            --bg-color: #f4f4f4;
+            --card-bg: white;
+            --text-color: #333;
+            --input-border: #ddd;
+        }
+
+        body.dark-mode {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #f4f4f4;
+            --input-border: #444;
+        }
+
+        body { 
+            font-family: sans-serif; 
+            background: var(--bg-color); 
+            padding: 20px; 
+            color: var(--text-color); 
+            transition: 0.3s; 
+        }
+
+        .container { max-width: 400px; margin: auto; }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+
+        h2 { text-align: center; margin-bottom: 15px; }
+
+        input { 
+            width: 100%; padding: 12px; margin-bottom: 10px; 
+            border: 1px solid var(--input-border); 
+            background: var(--card-bg); 
+            color: var(--text-color); 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+        }
+
+        .btn-group { display: flex; gap: 10px; }
+
+        button { 
+            flex: 1; padding: 12px; border: none; 
+            border-radius: 8px; color: white; 
+            cursor: pointer; font-weight: bold; 
+        }
+
+        .btn-masuk { background: #2ecc71; }
+        .btn-keluar { background: #e74c3c; }
+
+        .progress-container { background: #2c3e50 !important; color: white; }
+
+        #dark-mode-toggle {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: #34495e;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .transaksi-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    
+    <button id="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+
+    <div class="container">
+        <h2>Saldo: <span id="total-saldo">Rp 0</span></h2>
+
+        <div class="card progress-container">
+            <small>Progres Menuju 1 Miliar:</small>
+            <div style="background: #444; border-radius: 10px; height: 12px; margin: 8px 0; overflow: hidden;">
+                <div id="progress-bar" style="background: #f1c40f; width: 0%; height: 100%; transition: 0.5s;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span id="persentase-progres" style="font-weight: bold;">0%</span>
+                <small id="sisa-kurang">Sisa: Rp 1M</small>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Tambah Transaksi</h3>
+            <input type="text" id="nama-transaksi" placeholder="Nama (misal: Gaji)">
+            <input type="number" id="jumlah-transaksi" placeholder="Jumlah (misal: 10000)">
+            <div class="btn-group">
+                <button onclick="tambahData('masuk')" class="btn-masuk">Masuk</button>
+                <button onclick="tambahData('keluar')" class="btn-keluar">Keluar</button>
+            </div>
+        </div>
+
+        <div id="list-container"></div>
+    </div>
+
+    <script>
+        // 1. Inisialisasi Data
+        let daftarTransaksi = JSON.parse(localStorage.getItem('dataUang')) || [];
+
+        // 2. Fungsi Toggle Dark Mode
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            document.getElementById('dark-mode-toggle').innerText = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // Cek Dark Mode saat load
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('dark-mode-toggle').innerText = '☀️';
+        }
+
+        // 3. Fungsi Render (Tampilan)
+        function renderTampilan() {
+            const listContainer = document.getElementById('list-container');
+            const totalSaldoElement = document.getElementById('total-saldo');
+            const bar = document.getElementById('progress-bar');
+            const teksPersen = document.getElementById('persentase-progres');
+            const teksSisa = document.getElementById('sisa-kurang');
+            
+            listContainer.innerHTML = ''; 
+            let total = 0;
+            const targetMiliar = 1000000000;
+
+            daftarTransaksi.forEach((item) => {
+                if (item.tipe === 'masuk') total += item.jumlah;
+                else total -= item.jumlah;
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="transaksi-item">
+                        <div>
+                            <strong>${item.nama}</strong><br>
+                            <small style="color: ${item.tipe === 'masuk' ? '#2ecc71' : '#e74c3c'}">
+                                ${item.tipe === 'masuk' ? '+' : '-'} Rp ${item.jumlah.toLocaleString()}
+                            </small>
+                        </div>
+                        <button onclick="hapusData(${item.id})" style="background:none; color:#e74c3c; width:auto; padding:0;">Hapus</button>
+                    </div>
+                `;
+                listContainer.prepend(card);
+            });
+
+            totalSaldoElement.innerText = `Rp ${total.toLocaleString()}`;
+            
+            // Hitung Progres
+            let persen = (total / targetMiliar) * 100;
+            if (persen < 0) persen = 0;
+            if (persen > 100) persen = 100;
+
+            bar.style.width = persen + "%";
+            teksPersen.innerText = persen.toFixed(5) + "%"; 
+            
+            let sisa = targetMiliar - total;
+            if (sisa < 0) sisa = 0;
+            teksSisa.innerText = `Sisa: Rp ${sisa.toLocaleString()}`;
+            
+            localStorage.setItem('dataUang', JSON.stringify(daftarTransaksi));
+        }
+
+        // 4. Fungsi Tambah Data
+        function tambahData(tipe) {
+            const namaInput = document.getElementById('nama-transaksi');
+            const jumlahInput = document.getElementById('jumlah-transaksi');
+
+            if (namaInput.value === '' || jumlahInput.value === '') return alert("Isi data dulu!");
+
+            const transaksiBaru = {
+                id: Date.now(),
+                nama: namaInput.value,
+                jumlah: parseInt(jumlahInput.value),
+                tipe: tipe
+            };
+
+            daftarTransaksi.push(transaksiBaru);
+            namaInput.value = '';
+            jumlahInput.value = '';
+            renderTampilan();
+        }
+
+        // 5. Fungsi Hapus Data
+        function hapusData(id) {
+            daftarTransaksi = daftarTransaksi.filter(item => item.id !== id);
+            renderTampilan();
+        }
+
+        // Jalankan render pertama kali
+        renderTampilan();
+    </script>
+</body>
+</html>
